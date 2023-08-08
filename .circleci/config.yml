@@ -31,7 +31,7 @@ jobs:
           name: Create EKS cluster
           command: |
             AWS_REGION=${AWS_DEFAULT_REGION}
-            CLUSTER_NAME="udacity-cluster"
+            CLUSTER_NAME="udacity-capstore"
             # get cluster name
             CLUSTER_EXISTS=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION 2>&1)
             # Check if the cluster exists
