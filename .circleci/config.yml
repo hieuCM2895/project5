@@ -34,6 +34,7 @@ jobs:
             CLUSTER_NAME="udacity-capstore"
             # get cluster name
             echo $AWS_REGION
+            echo "Describe EKS cluster '$CLUSTER_NAME'"
             CLUSTER_EXISTS=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION)
             echo "Check EKS cluster '$CLUSTER_NAME'"
             # Check if the cluster exists
