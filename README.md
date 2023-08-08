@@ -17,3 +17,20 @@ In this project I apply the skills and knowledge which were developed throughout
 ## Application
 
 The Application is based on a python3 script using flask render_template to render a simple html in browser.
+
+## Project Structure
+
+The project repository has the following structure:
+
+- contain the Elastic Kubernetes Service file
+- create the Elastic Kubernetes Service
+- contain the html file
+- create the Elastic Kubernetes Service
+- deploy the application
+- builde the application Docker image
+
+## Access the Application
+
+Public LB DNS: http://a705ea1b1d0764587bd6b9eacf8195b3-1553505442.us-east-1.elb.amazonaws.com/
+
+![Access LB DNS](./submission/screenshots/web_after_deployment.png)
