@@ -1,0 +1,190 @@
+version: 2.1
+orbs:
+  docker: circleci/docker@2.2.0
+
+jobs:
+  configure-cluster:
+    docker:
+      - image: 'circleci/python:3.7'
+    steps:
+      - checkout
+      - run:
+          name: setup enviroment 
+          command: |
+            # Install kubectl
+            curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.18.8/2020-09-18/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            sudo mv ./kubectl /usr/local/bin
+            kubectl version --short --client
+
+            # Install AWS CLI
+            curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
+            unzip awscliv2.zip
+            sudo ./aws/install
+            aws --version
+
+            # Install eksctl
+            curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+            sudo mv /tmp/eksctl /usr/local/bin
+            eksctl version
+      - run:
+          name: Create EKS cluster
+          command: |
+            AWS_REGION=${AWS_DEFAULT_REGION}
+            CLUSTER_NAME="udacity-cluster"
+            # get cluster name
+            CLUSTER_EXISTS=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION 2>&1)
+            # Check if the cluster exists
+            if [[ $CLUSTER_EXISTS == *"ResourceNotFoundException"* ]]; then
+              echo "EKS cluster '$CLUSTER_NAME' does not exist."
+               # Create the EKS cluster
+              eksctl create cluster -f eks-cluster/cluster.yaml
+              kubectl get nodes
+              aws s3 cp ~/.kube/config s3://vietudacity/kubeconfig
+            else
+              echo "EKS cluster '$CLUSTER_NAME' exists."  
+            fi
+  test-build:
+    docker:
+      - image: 'circleci/python:3.7'
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - 'v1-dependencies-{{ checksum "requirements.txt" }}'
+            - v1-dependencies-
+      - run:
+          name: install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            make install
+      - run:
+          name: run lint
+          command: |
+            . venv/bin/activate
+            make lint
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: 'v1-dependencies-{{ checksum "requirements.txt" }}'
+
+  build_docker:
+    docker:
+      - image: 'circleci/python:3.7'
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.7
+      - run:
+          name: Install AWS CLI
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+            
+            sudo apt-get update
+            sudo apt-get install -y curl
+            
+            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+            export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - run:
+          name: Build, tag, and push the image to Amazon ECR
+          command: |
+            # build a docker image
+            echo "Build a docker container"
+            docker build -t vietcapstone:latest .
+          
+            # tag the docker image
+            REPOSITORY_URI="399684875495.dkr.ecr.us-east-1.amazonaws.com/vietcapstone:latest"
+            docker tag vietcapstone:latest $REPOSITORY_URI
+
+            echo "Pushing image to ECR"
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 399684875495.dkr.ecr.us-east-1.amazonaws.com
+            docker push $REPOSITORY_URI
+  
+  deploy-app:
+    docker:
+      - image: 'circleci/python:3.7'
+    steps:
+      - checkout
+      - run:
+          name: Install environment
+          command: |
+            # Install AWS CLI
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+
+            # Install kubectl
+            curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.18.8/2020-09-18/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            sudo mv ./kubectl /usr/local/bin
+            
+            sudo apt-get update
+            sudo apt-get install -y curl
+
+      - run:
+          name: Get config
+          command: |
+            aws s3 cp s3://vietudacity/kubeconfig ~/.kube/config
+            export KUBECONFIG=$KUBECONFIG:~/.kube/config
+      - run:
+          name: Deploy Application
+          command: |
+            NAMESPACE="viet-capstone"
+
+            # get the namespace exists
+            NAMESPACE_EXISTS=$(kubectl get namespace $NAMESPACE 2>&1)
+
+            # Check if the namespace exists
+            if [[ $output == *"NotFound"* ]]; then
+              echo "Namespace '$NAMESPACE' does not exist."
+              # create namespace
+              kubectl create namespace $NAMESPACE
+            else
+              echo "Namespace '$NAMESPACE' exists."
+            fi
+            
+            # kubectl config
+            kubectl config set-context --current --namespace=$NAMESPACE
+            kubectl apply -f deployment.yml -n $NAMESPACE
+
+            # get Load Balancer url
+            LOADBALAMCER_URL=$(kubectl get services -n $NAMESPACE loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            echo "$LOADBALAMCER_URL" > url.txt
+            cat url.txt
+
+            # copy the output to s3
+            aws s3 cp url.txt s3://vietudacity/url.txt
+
+            # deploy, update and check the deployment app
+            kubectl get deployments -n $NAMESPACE
+            kubectl -n $NAMESPACE set image deployment/viet-deployment webserver=399684875495.dkr.ecr.us-east-1.amazonaws.com/vietcapstone:latest
+            kubectl -n $NAMESPACE get pods
+            kubectl -n $NAMESPACE rollout status deployment viet-deployment
+
+      - run:
+          name: Smock Test
+          command: |
+            LOADBALAMCER_URL=$(cat url.txt)
+            response_code=$(curl --write-out '%{response_code}' --head --silent --output /dev/null $LOADBALAMCER_URL)
+            if [[ $response_code =~ 200 ]]; then 
+              echo "Load balancer is available."
+              exit 0
+            else
+              echo "Load balancer is not available."
+              exit 1
+            fi
+
+workflows:
+  default:
+    jobs:
+      - configure-cluster
+      - test-build
+      - build_docker:
+          requires: [test-build, configure-cluster]
+      - deploy-app:
+          requires: [build_docker]
