@@ -42,7 +42,7 @@ jobs:
                # Create the EKS cluster
               eksctl create cluster -f eks-cluster/cluster.yaml
               kubectl get nodes
-              aws s3 cp ~/.kube/config s3://hieucapstore/kubeconfig
+              aws s3 cp ~/.kube/config s3://hieucm2capstore/kubeconfig
             else
               echo "EKS cluster '$CLUSTER_NAME' exists."  
             fi
@@ -100,11 +100,11 @@ jobs:
             docker build -t hieucapstore .
           
             # tag the docker image
-            REPOSITORY_URI="048627970587.dkr.ecr.us-east-1.amazonaws.com/hieucapstore:latest"
+            REPOSITORY_URI="498681014299.dkr.ecr.us-east-1.amazonaws.com/hieucapstore:latest"
             docker tag hieucapstore:latest $REPOSITORY_URI
 
             echo "Pushing image to ECR"
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 048627970587.dkr.ecr.us-east-1.amazonaws.com
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 498681014299.dkr.ecr.us-east-1.amazonaws.com
             docker push $REPOSITORY_URI
   
   deploy-app:
@@ -131,7 +131,7 @@ jobs:
       - run:
           name: Get config
           command: |
-            aws s3 cp s3://hieucapstore/kubeconfig ~/.kube/config
+            aws s3 cp s3://hieucm2capstore/kubeconfig ~/.kube/config
             export KUBECONFIG=$KUBECONFIG:~/.kube/config
       - run:
           name: Deploy Application
@@ -165,7 +165,7 @@ jobs:
 
             # deploy, update and check the deployment app
             kubectl get deployments -n $NAMESPACE
-            kubectl -n $NAMESPACE set image deployment/hieucm2-deployment webserver=048627970587.dkr.ecr.us-east-1.amazonaws.com/hieucapstore:latest
+            kubectl -n $NAMESPACE set image deployment/hieucm2-deployment webserver=498681014299.dkr.ecr.us-east-1.amazonaws.com/hieucapstore:latest
             kubectl -n $NAMESPACE get pods
             kubectl -n $NAMESPACE rollout status deployment hieucm2-deployment
 

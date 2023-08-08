@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: webserver
-          image: 048627970587.dkr.ecr.us-east-1.amazonaws.com/hieucapstore:latest
+          image: 498681014299.dkr.ecr.us-east-1.amazonaws.com/hieucapstore:latest
           ports:
             - containerPort: 80
   strategy:
