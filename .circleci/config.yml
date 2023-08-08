@@ -34,18 +34,18 @@ jobs:
             CLUSTER_NAME="udacity"
             # get cluster name
             echo "Describe EKS cluster '$CLUSTER_NAME'"
-            CLUSTER_EXISTS=$(aws eks list-clusters --region $AWS_REGION --query $CLUSTER_NAME)
+            CLUSTER_EXISTS=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION 2>&1)
             echo "Check EKS cluster '$CLUSTER_EXISTS'"
             # Check if the cluster exists
-            if [[ $CLUSTER_EXISTS == "null" ]]; then
-              echo "EKS cluster '$CLUSTER_NAME' does not exist."
-               # Create the EKS cluster
-              eksctl create cluster -f eks-cluster/cluster.yaml
-              kubectl get nodes
-              aws s3 cp ~/.kube/config s3://hieucapstore/kubeconfig
-            else
-              echo "EKS cluster '$CLUSTER_NAME' exists."  
-            fi
+            # if [[ $CLUSTER_EXISTS == *"ResourceNotFoundException"* ]]; then
+            #   echo "EKS cluster '$CLUSTER_NAME' does not exist."
+            #    # Create the EKS cluster
+            #   eksctl create cluster -f eks-cluster/cluster.yaml
+            #   kubectl get nodes
+            #   aws s3 cp ~/.kube/config s3://hieucapstore/kubeconfig
+            # else
+            #   echo "EKS cluster '$CLUSTER_NAME' exists."  
+            # fi
   test-build:
     docker:
       - image: 'circleci/python:3.7'
@@ -142,7 +142,6 @@ jobs:
             NAMESPACE_EXISTS=$(kubectl get namespace $NAMESPACE 2>&1)
 
             # Check if the namespace exists
-            echo "check namespace '$NAMESPACE_EXISTS'"
             if [[ $output == *"NotFound"* ]]; then
               echo "Namespace '$NAMESPACE' does not exist."
               # create namespace
