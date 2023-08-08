@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: viet-deployment
-  namespace: viet-capstone
+  name: hieucm2-deployment
+  namespace: hieucm2-capstone
   labels:
     app: webserver
 spec:
@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: webserver
-          image: 399684875495.dkr.ecr.us-east-1.amazonaws.com/vietcapstone:latest
+          image: 048627970587.dkr.ecr.us-east-1.amazonaws.com/hieucapstore:latest
           ports:
             - containerPort: 80
   strategy:
@@ -30,7 +30,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: loadbalancer
-  namespace: viet-capstone
+  namespace: hieucm2-capstone
 spec:
   selector:
     app: webserver

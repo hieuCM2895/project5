@@ -4,7 +4,7 @@ kind: ClusterConfig
 metadata:
   name: udacity-cluster
   region: us-east-1
-  version: '1.26'
+  version: '1.27'
 
 availabilityZones: ["us-east-1a", "us-east-1b"]
 

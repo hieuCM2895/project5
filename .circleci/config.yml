@@ -31,7 +31,7 @@ jobs:
           name: Create EKS cluster
           command: |
             AWS_REGION=${AWS_DEFAULT_REGION}
-            CLUSTER_NAME="udacity-cluster"
+            CLUSTER_NAME="capstore-cluster"
             # get cluster name
             CLUSTER_EXISTS=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION 2>&1)
             # Check if the cluster exists
@@ -40,7 +40,7 @@ jobs:
                # Create the EKS cluster
               eksctl create cluster -f eks-cluster/cluster.yaml
               kubectl get nodes
-              aws s3 cp ~/.kube/config s3://vietudacity/kubeconfig
+              aws s3 cp ~/.kube/config s3://hieucapstore/kubeconfig
             else
               echo "EKS cluster '$CLUSTER_NAME' exists."  
             fi
@@ -95,14 +95,14 @@ jobs:
           command: |
             # build a docker image
             echo "Build a docker container"
-            docker build -t vietcapstone:latest .
+            docker build -t hieucapstore .
           
             # tag the docker image
-            REPOSITORY_URI="399684875495.dkr.ecr.us-east-1.amazonaws.com/vietcapstone:latest"
-            docker tag vietcapstone:latest $REPOSITORY_URI
+            REPOSITORY_URI="048627970587.dkr.ecr.us-east-1.amazonaws.com/hieucapstore:latest"
+            docker tag hieucapstore:latest $REPOSITORY_URI
 
             echo "Pushing image to ECR"
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 399684875495.dkr.ecr.us-east-1.amazonaws.com
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 048627970587.dkr.ecr.us-east-1.amazonaws.com
             docker push $REPOSITORY_URI
   
   deploy-app:
@@ -129,12 +129,12 @@ jobs:
       - run:
           name: Get config
           command: |
-            aws s3 cp s3://vietudacity/kubeconfig ~/.kube/config
+            aws s3 cp s3://hieucapstore/kubeconfig ~/.kube/config
             export KUBECONFIG=$KUBECONFIG:~/.kube/config
       - run:
           name: Deploy Application
           command: |
-            NAMESPACE="viet-capstone"
+            NAMESPACE="hieucm2-capstone"
 
             # get the namespace exists
             NAMESPACE_EXISTS=$(kubectl get namespace $NAMESPACE 2>&1)
@@ -162,9 +162,9 @@ jobs:
 
             # deploy, update and check the deployment app
             kubectl get deployments -n $NAMESPACE
-            kubectl -n $NAMESPACE set image deployment/viet-deployment webserver=399684875495.dkr.ecr.us-east-1.amazonaws.com/vietcapstone:latest
+            kubectl -n $NAMESPACE set image deployment/hieucm2-deployment webserver=048627970587.dkr.ecr.us-east-1.amazonaws.com/hieucapstore:latest
             kubectl -n $NAMESPACE get pods
-            kubectl -n $NAMESPACE rollout status deployment viet-deployment
+            kubectl -n $NAMESPACE rollout status deployment hieucm2-deployment
 
       - run:
           name: Smock Test
@@ -179,12 +179,12 @@ jobs:
               exit 1
             fi
 
-# workflows:
-#   default:
-#     jobs:
-#       - configure-cluster
-#       - test-build
-#       - build_docker:
-#           requires: [test-build, configure-cluster]
-#       - deploy-app:
-#           requires: [build_docker]
+workflows:
+  default:
+    jobs:
+      - configure-cluster
+      - test-build
+      - build_docker:
+          requires: [test-build, configure-cluster]
+      - deploy-app:
+          requires: [build_docker]
