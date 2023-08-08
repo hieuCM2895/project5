@@ -142,6 +142,7 @@ jobs:
             NAMESPACE_EXISTS=$(kubectl get namespace $NAMESPACE 2>&1)
 
             # Check if the namespace exists
+            echo "check namespace '$NAMESPACE_EXISTS'"
             if [[ $output == *"NotFound"* ]]; then
               echo "Namespace '$NAMESPACE' does not exist."
               # create namespace
