@@ -27,17 +27,13 @@ jobs:
             curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
             sudo mv /tmp/eksctl /usr/local/bin
             eksctl version
-
-            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-            export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       - run:
           name: Create EKS cluster
           command: |
             AWS_REGION=${AWS_DEFAULT_REGION}
             CLUSTER_NAME="udacity-capstore"
-            cat AWS_REGION
             # get cluster name
+            echo $AWS_REGION
             CLUSTER_EXISTS=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION 2>&1)
             # Check if the cluster exists
             if [[ $CLUSTER_EXISTS == *"ResourceNotFoundException"* ]]; then
