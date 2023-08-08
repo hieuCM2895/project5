@@ -139,11 +139,11 @@ jobs:
             NAMESPACE="hieucm2-capstone"
 
             # get the namespace exists
-            NAMESPACE_EXISTS=$(kubectl get namespace $NAMESPACE 2>&1)
+            NAMESPACE_EXISTS=$(kubectl get namespaces)
 
             # Check if the namespace exists
             echo "Check namespace '$NAMESPACE_EXISTS'"
-            if [[ $output == *"NotFound"* ]]; then
+            if [[ $NAMESPACE_EXISTS == *"hieucm2-capstone"* ]]; then
               echo "Namespace '$NAMESPACE' does not exist."
               # create namespace
               kubectl create namespace $NAMESPACE
@@ -161,7 +161,7 @@ jobs:
             cat url.txt
 
             # copy the output to s3
-            aws s3 cp url.txt s3://vietudacity/url.txt
+            aws s3 cp url.txt s3://hieucm2capstore/url.txt
 
             # deploy, update and check the deployment app
             kubectl get deployments -n $NAMESPACE
