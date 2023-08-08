@@ -142,14 +142,14 @@ jobs:
             NAMESPACE_EXISTS=$(kubectl get ns)
 
             # Check if the namespace exists
-            echo "Check namespace '$NAMESPACE_EXISTS'"
-            if [[ $NAMESPACE_EXISTS == *"hieucm2-capstone"* ]]; then
-              echo "Namespace '$NAMESPACE' does not exist."
-              # create namespace
-              kubectl create namespace $NAMESPACE
-            else
-              echo "Namespace '$NAMESPACE' exists."
-            fi
+            # echo "Check namespace '$NAMESPACE_EXISTS'"
+            # if [[ $NAMESPACE_EXISTS == *"hieucm2-capstone"* ]]; then
+            #   echo "Namespace '$NAMESPACE' does not exist."
+            #   # create namespace
+            #   kubectl create namespace $NAMESPACE
+            # else
+            #   echo "Namespace '$NAMESPACE' exists."
+            # fi
             
             # kubectl config
             kubectl config set-context --current --namespace=$NAMESPACE
