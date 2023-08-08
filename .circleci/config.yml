@@ -34,10 +34,10 @@ jobs:
             CLUSTER_NAME="udacity"
             # get cluster name
             echo "Describe EKS cluster '$CLUSTER_NAME'"
-            CLUSTER_EXISTS=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION 2>&1)
+            CLUSTER_EXISTS=$(aws eks list-clusters --region $AWS_REGION)
             echo "Check EKS cluster '$CLUSTER_EXISTS'"
             # Check if the cluster exists
-            if [[ $CLUSTER_EXISTS == *"ResourceNotFoundException"* ]]; then
+            if [[ $CLUSTER_EXISTS != *"udacity"* ]]; then
               echo "EKS cluster '$CLUSTER_NAME' does not exist."
                # Create the EKS cluster
               eksctl create cluster -f eks-cluster/cluster.yaml
