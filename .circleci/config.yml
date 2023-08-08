@@ -65,7 +65,7 @@ jobs:
           name: run lint
           command: |
             . venv/bin/activate
-            make lint -v
+            make lint3
 
       - save_cache:
           paths:
